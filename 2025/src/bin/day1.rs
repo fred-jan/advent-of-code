@@ -7,7 +7,7 @@ struct Problem {
 impl Problem {
     pub fn from_string(string: &str) -> Self {
         Self {
-            safe: Safe::from_string(string),
+            safe: Safe::from_string(string.trim()),
         }
     }
 
@@ -170,7 +170,8 @@ fn main() {
 mod tests {
     use super::*;
 
-    const SAMPLE: &str = r#"L68
+    const SAMPLE: &str = r#"
+L68
 L30
 R48
 L5
@@ -179,7 +180,8 @@ L55
 L1
 L99
 R14
-L82"#;
+L82
+"#;
 
     #[test]
     fn test_sample_part_1() {
