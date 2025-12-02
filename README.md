@@ -13,3 +13,13 @@
 | 2017 | 0/50 |
 | 2016 | 0/50 |
 | 2015 | 0/50 |
+
+### Learnings
+
+#### 2025
+
+| Day | Learnings |
+| -- | -- |
+| 1 | Rust development in Neovim & modular arithmetic refresher |
+| 2 | Using the FromStr trait in Rust |
+
