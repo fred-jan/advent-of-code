@@ -2,7 +2,7 @@
 
 | Year 📅 | Stars ⭐ |
 | -- | -- |
-| 2025 | 5/24 |
+| 2025 | 6/24 |
 | 2024 | 30/50 |
 | 2023 | 29/50 |
 | 2022 | 10/50 |
@@ -21,5 +21,6 @@
 | Day | Main learnings |
 | -- | -- |
 | 1 | Rust development in Neovim & modular arithmetic refresher |
-| 2 | Using the FromStr trait in Rust |
+| 2 | Using the `FromStr` trait in Rust |
+| 3 | Refresher on slicing vectors in Rust |
 
