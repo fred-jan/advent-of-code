@@ -2,7 +2,7 @@
 
 | Year 📅 | Stars ⭐ |
 | -- | -- |
-| 2025 | 6/24 |
+| 2025 | 8/24 |
 | 2024 | 30/50 |
 | 2023 | 29/50 |
 | 2022 | 10/50 |
@@ -18,9 +18,11 @@
 
 #### 2025
 
+Constraints: no external crates, standard library only
+
 | Day | Main learnings |
 | -- | -- |
-| 1 | Rust development in Neovim & modular arithmetic refresher |
-| 2 | Using the `FromStr` trait in Rust |
-| 3 | Refresher on slicing vectors in Rust |
-
+| [1](2025/src/bin/day1.rs) | Rust development in Neovim & modular arithmetic refresher |
+| [2](2025/src/bin/day2.rs) | Using the `FromStr` trait in Rust |
+| [3](2025/src/bin/day3.rs) | Refresher on slicing vectors in Rust |
+| [4](2025/src/bin/day4.rs) | Using `Result` return type in `main` & refresher on 2D spatial data structures |
