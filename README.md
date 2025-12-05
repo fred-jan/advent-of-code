@@ -2,7 +2,7 @@
 
 | Year 📅 | Stars ⭐ |
 | -- | -- |
-| 2025 | 9/24 |
+| 2025 | 10/24 |
 | 2024 | 30/50 |
 | 2023 | 29/50 |
 | 2022 | 10/50 |
@@ -26,4 +26,4 @@ Constraints: no external crates, standard library only
 | [2](2025/src/bin/day2.rs) | Using the `FromStr` trait in Rust |
 | [3](2025/src/bin/day3.rs) | Refresher on slicing vectors in Rust |
 | [4](2025/src/bin/day4.rs) | Using `Result` return type in `main` & refresher on 2D spatial data structures |
-| [5](2025/src/bin/day5.rs) | Learned about `Result` propagation within closures and such |
+| [5](2025/src/bin/day5.rs) | Learned about `Result` propagation within closures & fought the borrow checker |
