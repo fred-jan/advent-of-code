@@ -5,7 +5,7 @@
 | 2025 | 10/24 |
 | 2024 | 30/50 |
 | 2023 | 29/50 |
-| 2022 | 11/50 |
+| 2022 | 12/50 |
 | 2021 | 0/50 |
 | 2020 | 0/50 |
 | 2019 | 2/50 |
@@ -27,4 +27,4 @@ Constraints: no external crates, standard library only
 | [3](2025/src/bin/day3.rs) | Refresher on slicing vectors in Rust |
 | [4](2025/src/bin/day4.rs) | Using `Result` return type in `main` & refresher on 2D spatial data structures |
 | [5](2025/src/bin/day5.rs) | Learned about `Result` propagation within closures & fought the borrow checker |
-| [6](2025/src/bin/day6.rs) | `Result` propagation from within nested iterators |
+| [6](2025/src/bin/day6.rs) | Refresher on iterators and how to propagate `Result` types within them |
