@@ -2,7 +2,7 @@
 
 | Year 📅 | Stars ⭐ |
 | -- | -- |
-| 2025 | 12/24 |
+| 2025 | 13/24 |
 | 2024 | 30/50 |
 | 2023 | 29/50 |
 | 2022 | 12/50 |
@@ -29,3 +29,4 @@ Constraints: no external crates, standard library only
 | [5](2025/src/bin/day5.rs) | Learned about `Result` propagation within closures & fought the borrow checker |
 | [6](2025/src/bin/day6.rs) | Refresher on iterators and how to propagate `Result` types within them |
 | [7](2025/src/bin/day7.rs) | Borrow checker & vector element deduplication & `HashSet` refresher |
+| [8](2025/src/bin/day8.rs) | Vector `position` function & using tuplies to combine nested match arms |
