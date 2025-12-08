@@ -16,11 +16,11 @@ impl FromStr for Problem {
 
 impl Problem {
     pub fn part_1(&self, n: usize) -> usize {
-        self.playground.product_max_3_circuit_sizes(n)
+        self.playground.product_largest_3_circuits(n)
     }
 
-    pub fn part_2(&self) -> usize {
-        todo!()
+    pub fn part_2(&self) -> u64 {
+        self.playground.wall_dist()
     }
 }
 
@@ -45,7 +45,7 @@ impl FromStr for Playground {
 }
 
 impl Playground {
-    fn product_max_3_circuit_sizes(&self, n_connections: usize) -> usize {
+    fn sorted_dists(&self) -> Vec<((usize, usize), f32)> {
         let mut dists: HashMap<(usize, usize), f32> = HashMap::new();
 
         for (i, i_loc) in self.boxes.iter().enumerate() {
@@ -65,18 +65,21 @@ impl Playground {
                 dists.insert(k, i_loc.euclid_dist(j_loc));
             }
         }
-
         // Sort the distances from lowest to highest
         let mut sorted_dists: Vec<((usize, usize), f32)> = dists.into_iter().collect();
         sorted_dists.sort_by(|a, b| a.1.total_cmp(&b.1));
+        sorted_dists
+    }
 
+    fn wall_dist(&self) -> u64 {
         let mut circuits: Vec<Vec<usize>> = vec![];
+        let mut wall_dist = 0;
 
-        // Connect lowest n boxes
-        for ((i, j), _dist) in sorted_dists.into_iter().take(n_connections) {
+        // Same as part 1 with different stopping condition
+        for ((i, j), _dist) in self.sorted_dists().into_iter() {
             // println!(
             //     "Connecting {} with {} (dist: {})",
-            //     self.boxes[i], self.boxes[j], dist
+            //     self.boxes[i], self.boxes[j], _dist
             // );
 
             let i_circuit_idx = circuits
@@ -94,8 +97,56 @@ impl Playground {
                     }
 
                     // Boxes in two separate circuits, connect the circuits
-                    let mut j_circuit = circuits.swap_remove(idx_j);
+                    let mut j_circuit = circuits[idx_j].clone();
                     circuits[idx_i].append(&mut j_circuit);
+                    circuits.swap_remove(idx_j);
+                }
+                (Some(idx_i), None) => circuits[idx_i].push(j),
+                (None, Some(idx_j)) => circuits[idx_j].push(i),
+                (None, None) => circuits.push(vec![i, j]),
+            }
+
+            // println!("Circuit count: {}", circuits.len());
+
+            let boxes_connected = circuits.iter().flatten().count();
+
+            if circuits.len() == 1 && boxes_connected == self.boxes.len() {
+                wall_dist = self.boxes[i].x * self.boxes[j].x;
+                break;
+            }
+        }
+
+        wall_dist
+    }
+
+    fn product_largest_3_circuits(&self, n_connections: usize) -> usize {
+        let mut circuits: Vec<Vec<usize>> = vec![];
+
+        // Connect lowest n boxes
+        for ((i, j), _dist) in self.sorted_dists().into_iter().take(n_connections) {
+            // println!(
+            //     "Connecting {} with {} (dist: {})",
+            //     self.boxes[i], self.boxes[j], _dist
+            // );
+
+            let i_circuit_idx = circuits
+                .iter()
+                .position(|circuit_boxes| circuit_boxes.contains(&i));
+            let j_circuit_idx = circuits
+                .iter()
+                .position(|circuit_boxes| circuit_boxes.contains(&j));
+
+            match (i_circuit_idx, j_circuit_idx) {
+                (Some(idx_i), Some(idx_j)) => {
+                    if idx_i == idx_j {
+                        // Boxes are already in same circuit, nothing happens
+                        continue;
+                    }
+
+                    // Boxes in two separate circuits, connect the circuits
+                    let mut j_circuit = circuits[idx_j].clone();
+                    circuits[idx_i].append(&mut j_circuit);
+                    circuits.swap_remove(idx_j);
                 }
                 (Some(idx_i), None) => circuits[idx_i].push(j),
                 (None, Some(idx_j)) => circuits[idx_j].push(i),
@@ -164,6 +215,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let problem = fs::read_to_string("input/day8.txt")?.parse::<Problem>()?;
 
     println!("Part 1: {}", problem.part_1(1000)); // Attempts: 8, 57564
+    println!("Part 2: {}", problem.part_2()); // Attempts: 133296744
 
     Ok(())
 }
@@ -198,5 +250,10 @@ mod tests {
     #[test]
     fn test_sample_part_1() {
         assert_eq!(40, SAMPLE.parse::<Problem>().unwrap().part_1(10));
+    }
+
+    #[test]
+    fn test_sample_part_2() {
+        assert_eq!(25272, SAMPLE.parse::<Problem>().unwrap().part_2());
     }
 }
