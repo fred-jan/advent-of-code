@@ -2,7 +2,7 @@
 
 | Year 📅 | Stars ⭐ |
 | -- | -- |
-| 2025 | 15/24 |
+| 2025 | 16/24 |
 | 2024 | 30/50 |
 | 2023 | 29/50 |
 | 2022 | 12/50 |
@@ -31,3 +31,4 @@ Constraints: no external crates, standard library only
 | [7](2025/src/bin/day7.rs) | Borrow checker & vector element deduplication & `HashSet` refresher |
 | [8](2025/src/bin/day8.rs) | Vector `position` function & using tuplies to combine nested match arms |
 | [9](2025/src/bin/day9.rs) | Vector of `Option` elements can be evaluated using `flatten` iterator function |
+| [10](2025/src/bin/day10.rs) | Writing a function that generates combinations |
