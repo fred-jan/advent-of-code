@@ -38,18 +38,82 @@ impl Point {
 
 #[derive(Debug)]
 struct Line {
-    start: Point,
-    end: Point,
+    from: Point,
+    to: Point,
 }
 
 impl Line {
-    fn contains(&self, loc: &Point) -> bool {
-        (self.start.x.min(self.end.x)..=self.start.x.max(self.end.x)).contains(&loc.x)
-            && (self.start.y.min(self.end.y)..=self.start.y.max(self.end.y)).contains(&loc.y)
+    fn from_to(from: Point, to: Point) -> Self {
+        Self { from, to }
     }
 
-    fn cross_2d(&self) -> i64 {
-        (self.start.x * self.end.y) as i64 - (self.end.x * self.start.y) as i64
+    fn intersects(&self, other: &Line) -> bool {
+        let (ax, ay, bx, by, cx, cy, dx, dy) = (
+            self.from.x as f32,
+            self.from.y as f32,
+            self.to.x as f32,
+            self.to.y as f32,
+            other.from.x as f32,
+            other.from.y as f32,
+            other.to.x as f32,
+            other.to.y as f32,
+        );
+
+        let det = (dx - cx) * (by - ay) - (dy - cy) * (bx - ax);
+
+        if det == 0.0 {
+            // Parallel
+            return false;
+        }
+
+        // t parameterizes the length of AB
+        let t = ((dx - cx) * (cy - ay) - (dy - cy) * (cx - ax)) / det;
+
+        if t <= 0.0 || t > 1.0 {
+            // Only count at most one length of AB, no more
+            return false;
+        }
+
+        // u parameterizes the length of AB
+        let u = ((bx - ax) * (cy - ay) - (by - ay) * (cx - ax)) / det;
+
+        if u <= 0.0 || u > 1.0 {
+            // And only count at most one length of CD
+            return false;
+        }
+
+        true
+    }
+}
+
+struct Rectangle {
+    p1: Point,
+    p2: Point,
+}
+
+impl Rectangle {
+    fn from_extrema(p1: Point, p2: Point) -> Self {
+        Self { p1, p2 }
+    }
+
+    fn inset_one(&self) -> Self {
+        Self {
+            p1: Point::new(self.p1.x.min(self.p2.x) + 1, self.p1.y.min(self.p2.y) + 1),
+            p2: Point::new(self.p1.x.max(self.p2.x) - 1, self.p1.y.max(self.p2.y) - 1),
+        }
+    }
+
+    fn area(&self) -> u64 {
+        (self.p1.x.abs_diff(self.p2.x) + 1) * (self.p1.y.abs_diff(self.p2.y) + 1)
+    }
+
+    fn edges(&self) -> [Line; 4] {
+        [
+            Line::from_to(self.p1, Point::new(self.p1.x, self.p2.y)),
+            Line::from_to(Point::new(self.p1.x, self.p2.y), self.p2),
+            Line::from_to(self.p2, Point::new(self.p2.x, self.p1.y)),
+            Line::from_to(Point::new(self.p2.x, self.p1.y), self.p1),
+        ]
     }
 }
 
@@ -109,61 +173,15 @@ impl FloorPlan {
         let mut boundaries: Vec<Line> = self
             .red_tiles
             .windows(2)
-            .map(|window| Line {
-                start: window[0],
-                end: window[1],
-            })
+            .map(|window| Line::from_to(window[0], window[1]))
             .collect();
 
-        let first_line_start = boundaries.first().expect("Expected last line").start;
-        let last_line_end = boundaries.last().expect("Expected last line").end;
-        let closing_line = Line {
-            start: last_line_end,
-            end: first_line_start,
-        };
+        let first_line_start = boundaries.first().expect("Expected last line").from;
+        let last_line_end = boundaries.last().expect("Expected last line").to;
+        let closing_line = Line::from_to(last_line_end, first_line_start);
 
         // Connect the last and first lines
         boundaries.push(closing_line);
-
-        // Shoelace formula to determine winding order (sum of 2d cross products > 0 with Y down -> CW)
-        let result: i64 = boundaries.iter().map(|line| line.cross_2d()).sum();
-
-        let fill_start = if result > 0 {
-            if first_line_start.x == last_line_end.x {
-                // Vertical line (same X)
-                Point::new(first_line_start.x + 1, first_line_start.y + 1)
-            } else {
-                // Horizontal line (same Y)
-                Point::new(first_line_start.x + 1, first_line_start.y - 1)
-            }
-        } else if first_line_start.x == last_line_end.x {
-            // Vertical line (same X)
-            Point::new(first_line_start.x + 1, first_line_start.y - 1)
-        } else {
-            // Horizontal line (same Y)
-            Point::new(first_line_start.x - 1, first_line_start.y - 1)
-        };
-
-        // Flood fill to determine the inside locations
-        let mut inside = vec![];
-        let mut to_visit = vec![fill_start];
-        while let Some(loc) = to_visit.pop() {
-            // Skip if already visited or lies on a boundary line
-            if inside.contains(&loc) || boundaries.iter().any(|line| line.contains(&loc)) {
-                continue;
-            }
-
-            // Record this location as inside location
-            inside.push(loc);
-
-            // Visit adjacent positions (left, right, top, bottom)
-            to_visit.append(&mut vec![
-                Point::new(loc.x - 1, loc.y),
-                Point::new(loc.x + 1, loc.y),
-                Point::new(loc.x, loc.y - 1),
-                Point::new(loc.x, loc.y + 1),
-            ]);
-        }
 
         let mut areas = HashMap::new();
 
@@ -178,26 +196,25 @@ impl FloorPlan {
                     continue;
                 }
 
-                // Corners of the rectangle in CW winding order
-                let corners = [
-                    Point::new(tile_a.x, tile_a.y),
-                    Point::new(tile_b.x, tile_a.y),
-                    Point::new(tile_b.x, tile_b.y),
-                    Point::new(tile_a.x, tile_b.y),
-                ];
+                let rect = Rectangle::from_extrema(*tile_a, *tile_b);
 
-                // Calculate the rectangle area if its corners lie on a boundary or inside,
-                // otherwise register the result as None to indicate the rectangle is not
-                // applicable (prevents processing of the same rectangle from reverse order tiles)
+                // Inset the rectangle by one so edges formed from (parts of) the boundary lines do
+                // no longer touch those. Then check if any of the edges of the new rectangle
+                // intersect with any of the boundary lines. Any such intersection indicates that
+                // the rectangle is not wholly contained by the outline.
+                let rect_inset_edges = rect.inset_one().edges();
+                let rect_intersects_boundary = boundaries.iter().any(|boundary| {
+                    rect_inset_edges
+                        .iter()
+                        .any(|rect_edge| rect_edge.intersects(boundary))
+                });
+
                 areas.insert(
                     (tile_b, tile_a),
-                    if corners.iter().all(|corner| {
-                        inside.contains(corner)
-                            || boundaries.iter().any(|line| line.contains(corner))
-                    }) {
-                        Some((tile_b.x.abs_diff(tile_a.x) + 1) * (tile_b.y.abs_diff(tile_a.y) + 1))
-                    } else {
+                    if rect_intersects_boundary {
                         None
+                    } else {
+                        Some(rect.area())
                     },
                 );
             }
@@ -213,7 +230,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let problem = fs::read_to_string("input/day9.txt")?.parse::<Problem>()?;
 
     println!("Part 1: {}", problem.part_1()); // Attempts: 4737026542 (too low), 4737096935
-    println!("Part 2: {}", problem.part_2()); // Attempts: 
+    println!("Part 2: {}", problem.part_2()); // Attempts: 1644094530
 
     Ok(())
 }
@@ -232,6 +249,18 @@ mod tests {
 2,3
 7,3
 "#;
+
+    #[test]
+    fn test_rectangle() {
+        let rect = Rectangle::from_extrema(Point::new(0, 0), Point::new(4, 4));
+
+        assert_eq!(25, rect.area());
+        assert_eq!(16, rect.inset_one().area());
+
+        let rect = Rectangle::from_extrema(Point::new(4, 4), Point::new(0, 0));
+
+        assert_eq!(16, rect.inset_one().area());
+    }
 
     #[test]
     fn test_sample_part_1() {
