@@ -1,4 +1,10 @@
-use std::{collections::HashMap, error::Error, fs, str::FromStr, vec};
+use std::{
+    collections::{HashMap, HashSet},
+    error::Error,
+    fs,
+    str::FromStr,
+    vec,
+};
 
 struct Problem {
     schematic: Schematic,
@@ -16,16 +22,36 @@ impl FromStr for Problem {
 
 impl Problem {
     pub fn part_1(&self) -> usize {
-        self.schematic.find_paths(self.schematic.main_input, vec![]).len()
+        self.schematic.count_paths(
+            *self.schematic.devices.get("you").expect("Expect you node"),
+            *self.schematic.devices.get("out").expect("Expect out node"),
+            vec![],
+            HashSet::new(),
+            &mut HashMap::new(),
+        )
+    }
+
+    pub fn part_2(&self) -> usize {
+        self.schematic.count_paths(
+            *self.schematic.devices.get("svr").expect("Expect svr node"),
+            *self.schematic.devices.get("out").expect("Expect out node"),
+            vec![],
+            vec![
+                *self.schematic.devices.get("dac").expect("Expect dac node"),
+                *self.schematic.devices.get("fft").expect("Expect fft node"),
+            ]
+            .into_iter()
+            .collect(),
+            &mut HashMap::new(),
+        )
     }
 }
 
 #[derive(Debug, Default)]
 struct Schematic {
     devices: HashMap<String, usize>,
+    device_labels: Vec<String>, // for debugging
     device_count: usize,
-    main_input: usize,
-    main_output: usize,
     mappings: HashMap<usize, Vec<usize>>,
 }
 
@@ -50,18 +76,67 @@ impl FromStr for Schematic {
 }
 
 impl Schematic {
-    fn find_paths(&self, current: usize, current_path: Vec<usize>) -> Vec<Vec<usize>> {
-        let mut current_path = current_path.clone();
-        current_path.push(current);
+    // For debugging purposes
+    fn _path_str(&self, path: &[usize]) -> String {
+        path.iter()
+            .map(|device_idx| self.device_labels[*device_idx].clone())
+            .collect::<Vec<String>>()
+            .join(",")
+    }
 
-        if current == self.main_output {
-            return vec![current_path];
+    fn count_paths(
+        &self,
+        from: usize,
+        to: usize,
+        path: Vec<usize>,
+        to_visit: HashSet<usize>,
+        memory: &mut HashMap<(usize, Vec<usize>), usize>,
+    ) -> usize {
+        if path.contains(&from) {
+            println!("Loop detected");
+            return 0;
         }
 
-        self.mappings[&current]
+        // println!(
+        //     "Current: {}, Path: {}",
+        //     self.device_labels[from],
+        //     self.path_str(&path)
+        // );
+
+        let mut path = path.clone();
+        path.push(from);
+
+        if let Some(memorized_path_count) = memory.get(&(from, to_visit.iter().copied().collect()))
+        {
+            // println!(
+            //     "Memorized paths for {} with to visit={}",
+            //     self.device_labels[from],
+            //     self._path_str(&to_visit.iter().copied().collect::<Vec<usize>>())
+            // );
+            return *memorized_path_count;
+        }
+
+        let mut to_visit = to_visit.clone();
+        to_visit.remove(&from);
+
+        if from == to {
+            // Only return the path if we visited all nodes, otherwise return no paths
+            return if to_visit.is_empty() { 1 } else { 0 };
+        }
+
+        let path_count = self.mappings[&from]
             .iter()
-            .flat_map(|output| self.find_paths(*output, current_path.clone()))
-            .collect()
+            .map(|output| self.count_paths(*output, to, path.clone(), to_visit.clone(), memory))
+            .sum();
+
+        // println!(
+        //     "Memorizing paths for {} with to visit={}",
+        //     self.device_labels[from],
+        //     self._path_str(&to_visit.iter().copied().collect::<Vec<usize>>())
+        // );
+        memory.insert((from, to_visit.iter().copied().collect()), path_count);
+
+        path_count
     }
 
     fn register_device(&mut self, label: String) -> usize {
@@ -71,14 +146,7 @@ impl Schematic {
 
         let device_idx = self.device_count;
 
-        if label == "you" {
-            self.main_input = device_idx;
-        }
-
-        if label == "out" {
-            self.main_output = device_idx;
-        }
-
+        self.device_labels.push(label.clone());
         self.devices.insert(label, device_idx);
         self.device_count += 1;
 
@@ -90,6 +158,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let problem = fs::read_to_string("input/day11.txt")?.parse::<Problem>()?;
 
     println!("Part 1: {}", problem.part_1()); // 428
+    println!("Part 2: {}", problem.part_2()); // 331468292364745
 
     Ok(())
 }
@@ -111,8 +180,29 @@ hhh: ccc fff iii
 iii: out
 "#;
 
+    const SAMPLE2: &str = r#"
+svr: aaa bbb
+aaa: fft
+fft: ccc
+bbb: tty
+tty: ccc
+ccc: ddd eee
+ddd: hub
+hub: fff
+eee: dac
+dac: fff
+fff: ggg hhh
+ggg: out
+hhh: out
+"#;
+
     #[test]
     fn test_sample_part_1() {
         assert_eq!(5, SAMPLE.parse::<Problem>().unwrap().part_1());
+    }
+
+    #[test]
+    fn test_sample_part_2() {
+        assert_eq!(2, SAMPLE2.parse::<Problem>().unwrap().part_2());
     }
 }
